@@ -113,6 +113,7 @@ int getTimetFromString(char *str, time_t *t);
 int composeFname( char *result, char *fpath, char *fname);
 int readLineFromPositionX(FILE *f, long int pos, char *l, long int *inipos, long int *finpos);
 int getFileLimits(trenddata *t);
+int findPosition_t(FILE *f, time_t t, long int fsize, int linelen, int getlower, long int *pos);
 
 
 

@@ -103,7 +103,7 @@ return (0);
 
 // read first COMPLETE line after position 'l'
 // returns the accurate position where the line begins
-// and also te begining of next line, if the corresponding pointers are not null
+// and also the begining of next line, if the corresponding pointers are not null
 
 int readLineFromPositionX(FILE *f, long int pos, char *l, long int *inipos, long int *finpos)
 {
@@ -206,6 +206,119 @@ if (_verbose > 2)
 
 return(0);
 }
+
+//----------------------------------------------------------------------
+
+// basic binary search in file, searching for datetime string
+
+int findPosition(FILE *f, char *str, long int fsize, long int *pos)
+{
+long int 	current_pos = fsize / 2;
+long int 	current_delta = fsize / 2;
+char 		l[2000];
+char 		strf[500];
+int 		i=0,j=0, end=0, ret=0 ;
+int 		slen=0;
+
+if (!f || !str || !pos)
+  return (0);
+
+slen=strlen(str);
+
+while (!end)
+  {
+  if (readLineFromPositionX(f, current_pos, l, NULL, NULL))
+	{
+	for (i=0 ; l[i] && l[i]!=',' ; i++);
+	
+	i++;
+	j=0;
+	for ( ; l[i] && l[i]!=',' ; i++)
+	  strf[j++] = l[i];
+	strf[j]=0;
+	  
+	printf("\n Compare -%s-%s- pos: %li  delta:% li", strf, str, current_pos, current_delta);
+
+	current_delta /= 2;
+	if ( (ret = strncmp(strf, str, slen)) > 0 )
+	  current_pos -= current_delta; 
+	else if ( ret < 0 )
+	  current_pos += current_delta; 
+    else
+  	  end=1;	   
+    }
+  }
+
+return(1);
+}
+
+//----------------------------------------------------------------------
+
+// basic binary search in file, searching for time_t value
+
+int findPosition_t(FILE *f, time_t t, long int fsize, int linelen, int getlower, long int *pos)
+{
+long int 	current_pos = fsize / 2;
+long int 	current_delta = fsize / 2;
+char 		l[2000], strf[500];
+time_t		tf=0, tprev1=0;  //  prevoius values to stop binary search
+int 		i=0, end=0;
+long int 	pprev=0, pnext=0;
+
+if (!f || !t || !pos)
+  return (0);
+
+while (!end)
+  {
+
+  if (readLineFromPositionX(f, current_pos, l, &pprev, &pnext))
+	{
+	for (i=0 ; l[i] && l[i]!=','  && l[i]!='.' ; i++)
+	  strf[i] = l[i];
+	strf[i]=0;
+	tf=atol(strf);
+	  
+	if (_verbose > 2)  
+	  printf("\n Compare -%li-%li- pos: %li  delta:% li", t, tf, current_pos, current_delta);
+
+	//usleep(100000);
+
+	if (current_delta > (linelen/2))
+	  current_delta /= 2;
+	else if (getlower &&  (tf < t && tprev1 > t))  // forced end, we are jumping on the same line
+	  end=1;
+	else if ( (tf > t && tprev1 < t))  // forced end, we are jumping on the same line!!
+	  end=1;
+	  
+	if (!end)
+	  {
+	  if ( t < tf )
+		current_pos -= current_delta; 
+	  else if ( t > tf )
+		current_pos += current_delta; 
+  	  else
+  	    end=1;	  
+  	  }
+  	   
+    // some validation to stay 'inside' the file
+    if (current_pos < 0 && (current_delta < (linelen/2)) )
+        {current_pos = 0; end=1;}
+
+    if (current_pos > fsize && (current_delta < (linelen/2)) )
+        {current_pos = fsize; end=1;}
+    
+  	tprev1 = tf;  
+    }  // if readline....
+  }   // while ! end
+
+if (getlower)
+  *pos = pprev;
+else
+  *pos = pnext;
+
+return(1);
+}
+
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
