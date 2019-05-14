@@ -199,7 +199,6 @@ int 				firstLineFound=0, finalLineFound=0;
 struct tm   		*pstm=NULL;
 long int			toread=0, nread=0, totalread=0;
 
-
 getFileSize(t->fname , &(t->fsize));
 if (_verbose > 2)
   printf("\n fsize: %li", t->fsize);
@@ -262,12 +261,84 @@ if ( ((t->f)=fopen(t->fname, "r")) != NULL )
 			printf("\n File read succesfully ! ");
 			fflush(stdout);
 			}
+			
+			
+			
+/*	// if VERY verbose mode is set, then dump initial an final pieces of raw buffer, just for checking...	   
+	if (_verbose > 8)
+	  {
+	  int n=0;
+	  printf("\n Block start: |");
+	  do 
+		{
+		printf("%c", t->raw_data_str[n++]);
+        } while (n<300);
+	  printf("|\n");
+
+	  n=300;
+	  printf("\n Block end: |");
+	  do 
+		{
+		printf("%c", t->raw_data_str[totalread - (n--)]);
+        } while (n>=0);
+	  printf("|\n");
+      }   // do (highly verbose)			
+	*/
 
 
 
 
+		{
+		char 				str[1000];
+		char 				*textLine=NULL;
+		char 				*endLine=NULL;
+				
+			
+		// get every line, separated by newline
+		textLine = strtok_r(t->raw_data_str, "\n", &endLine);
+		while( textLine != NULL ) 
+			{
+			char 	*textElement=NULL;
+			int 	count = 0;	
+			char 	*endElement=NULL;
+
+			printf( " %s\n", textLine );     
+
+			// get every field in each line
+
+			count=0;
+			textElement = strtok_r(textLine, ",", &endElement);
+			while( textElement != NULL ) 
+				{
+
+				// get human readable date
+				if (count == 1)
+					{
+					textElement[12]	= 0;
+					printf("\n --- %s\n", textElement);
+					}
+
+				// get raw (upload and download) traffic (without filter!)
+				else if (count == 4 || count == 5)
+					{
+//					textElement[12]	= 0;
+//					printf("\n --- %s", textElement);
+					printf( " %s\n", textElement );      
+					}
+
+				else
+					printf( " %s\n", textElement );      
+
+
+				count++;
+				textElement = strtok_r(NULL, ",", &endElement);
+				
+				}
+
+			textLine = strtok_r(NULL, "\n", &endLine);
+			}
 		}
-
+	}
   fclose(t->f);
   }  // fopen
   

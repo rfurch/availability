@@ -51,40 +51,40 @@ extern "C" {
 
 typedef struct trenddata
   {
-  char 		  fpath[1000];
-  char 		  fname[1000];
+  char 		  	fpath[1000];
+  char 		  	fname[1000];
   
-  int       fieldsel_d[20];
-  int       fieldsel_n;
+  int       	fieldsel_d[20];
+  int       	fieldsel_n;
 
-  FILE		  *f;
-  long int 	fsize;
-  char 		  initime_s[100];
-  time_t	  initime_t;
-  char 		  fintime_s[100];
-  time_t	  fintime_t;
-  long int 	inip, finp;
+  FILE		  	*f;
+  long int 		fsize;
+  char 		  	initime_s[100];
+  time_t	  	initime_t;
+  char 		  	fintime_s[100];
+  time_t	  	fintime_t;
+  long int 		inip, finp;
 
-  int 		  nfields;
-  int 		  final_samples;    		// requiered from upper layers
-  int 		  orig_samples;    // # of samples in trend file for the given period (> or < than nsamples) 
-  double	  step_t;
+  int 		  	nfields;
+  int 		  	final_samples;    		// requiered from upper layers
+  int 		  	orig_samples;    // # of samples in trend file for the given period (> or < than nsamples) 
+  double	  	step_t;
 
-  time_t	  firstline_t;
-  time_t	  lastline_t;
-  int 		  linelen;
+  time_t	  	firstline_t;
+  time_t	  	lastline_t;
+  int 		  	linelen;
   
-  long int 	bufferlen;
+  long int 		bufferlen;
   // raw data from file, as a big string
-  char 		  *raw_data_str;
+  char 		  	*raw_data_str;
   
   // parsed data
-  time_t  	*orig_time;
-  double 	  **orig_data;
+  time_t  		*orig_time;
+  double 	  	**orig_data;
 
   // final samples
-  time_t  	*final_time;
-  double 	  **final_data;
+  time_t  		*final_time;
+  double 	  	**final_data;
 
   //--------------------------------------
 
