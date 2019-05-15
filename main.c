@@ -195,9 +195,10 @@ return(1);
 
 int processFile(trenddata *t)
 {
-int 				firstLineFound=0, finalLineFound=0;
-struct tm   		*pstm=NULL;
-long int			toread=0, nread=0, totalread=0;
+int 					firstLineFound=0, finalLineFound=0;
+struct tm   			*pstm=NULL;
+long int				toread=0, nread=0, totalread=0;
+unsigned long long int 	ll1=0, ll2=0;
 
 getFileSize(t->fname , &(t->fsize));
 if (_verbose > 2)
@@ -207,6 +208,9 @@ if (_verbose > 2)
 getTimetFromString(t->initime_s, &(t->initime_t));
 getTimetFromString(t->fintime_s, &(t->fintime_t));
 
+// convert received strings to minutes
+getMinuteFromString(t->initime_s, &ll1);
+getMinuteFromString(t->fintime_s, &ll2);
 
 if ( ((t->f)=fopen(t->fname, "r")) != NULL )
 	{

@@ -23,6 +23,48 @@
 extern int  		_verbose;
 
 
+
+//----------------------------------------------------------------------
+
+// read a line containing:
+// time_t, readable_datetime, Icounter, Ocounter, DownloadBW, UploadBW
+
+int getValuesFromLine(char *str, time_t *t, unsigned long long int *dateTimeInMinutes, double *DownBW, double *UpBW)
+{
+char 	*textElement = NULL;
+int 	count=0;
+if (!str || !t || !dateTimeInMinutes || !DownBW || !UpBW)
+  return(0);
+
+textElement = strtok(str, ",");
+while( textElement != NULL ) 
+	{
+
+	// get human readable date
+	if (count == 1)
+		{
+		textElement[12]	= 0;
+		printf("\n --- %s\n", textElement);
+		}
+
+	// get raw (upload and download) traffic (without filter!)
+	else if (count == 4 || count == 5)
+		{
+//					textElement[12]	= 0;
+//					printf("\n --- %s", textElement);
+		printf( " %s\n", textElement );      
+		}
+
+	else
+		printf( " %s\n", textElement );      
+
+	count++;
+	textElement = strtok(NULL, ",");
+	}
+return(1);
+
+}
+
 //----------------------------------------------------------------------
 
 int trenddata_init(trenddata *t)
@@ -49,6 +91,31 @@ if (stat(fname, &f_stat))
   return(0);
   
 *fsize = f_stat.st_size;
+return(1);
+}
+
+//----------------------------------------------------------------------
+
+// convert a given string (201203031145)  to a timestamp  (minute resolution)
+
+int getMinuteFromString(char *str, unsigned long long int *m)
+{
+char *aux=NULL;
+
+if (!str || !m)
+  return(0);
+
+if (strlen(str) < 12)	
+  return(0);
+
+aux = strdup(str);
+aux[12] = 0;
+*m = atoll(aux);  
+free(aux);
+ 
+if (_verbose > 2)
+  printf("\n convert |%s| to %lli", str, *m);
+
 return(1);
 }
 
