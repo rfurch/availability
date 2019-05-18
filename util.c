@@ -33,6 +33,8 @@ int getValuesFromLine(char *str, time_t *t, unsigned long long int *dateTimeInMi
 {
 char 	*textElement = NULL;
 int 	count=0;
+char 	*aux=NULL;
+
 if (!str || !t || !dateTimeInMinutes || !DownBW || !UpBW)
   return(0);
 
@@ -40,23 +42,29 @@ textElement = strtok(str, ",");
 while( textElement != NULL ) 
 	{
 
-	// get human readable date
-	if (count == 1)
+	// get used fields and dump their values into variables
+	switch(count)
 		{
-		textElement[12]	= 0;
-		printf("\n --- %s\n", textElement);
-		}
+		case 1:
+			*t = (time_t)atol(textElement);
+		break;
+		
+		case 2:
+			aux = strdup(textElement);
+			aux[12] = 0;
+			*dateTimeInMinutes = atoll(aux);
+			free(aux);
+		break;
+		
+		case 4:
+			*DownBW = atof(textElement);
+		break;
 
-	// get raw (upload and download) traffic (without filter!)
-	else if (count == 4 || count == 5)
-		{
-//					textElement[12]	= 0;
-//					printf("\n --- %s", textElement);
-		printf( " %s\n", textElement );      
-		}
+		case 5:
+			*UpBW = atof(textElement);
+		break;
 
-	else
-		printf( " %s\n", textElement );      
+		}
 
 	count++;
 	textElement = strtok(NULL, ",");

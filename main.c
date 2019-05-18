@@ -40,157 +40,6 @@ printf ("============================================================\n\n");
 fflush(stdout);
 }
 
-
-//----------------------------------------------------------------------
-
-int getBWDataFromFile(trenddata *t)
-{
-char 			fullpathname[500];
-int 			p1f=0, p2f=0;
-long int		toread=0, nread=0, totalread=0;
-int 			n=0;
-
-// make complete path
-composeFname(fullpathname, t->fpath, t->fname);
-
-getFileSize(fullpathname, &(t->fsize));
-if (_verbose > 2)
-  printf("\n fsize: %li", t->fsize);
-
-// convert received strings to time_t
-getTimetFromString(t->initime_s, &(t->initime_t));
-getTimetFromString(t->fintime_s, &(t->fintime_t));
-
-if (t->initime_t > t->fintime_t)		// swap them if necessary
-  {
-  time_t aux = t->initime_t;
-  t->initime_t = t->fintime_t;
-  t->fintime_t = aux;
-  }
-
-if ( ((t->f)=fopen(fullpathname, "r")) != NULL )
-  {
-  //readLineFromPositionX(f, 40010, l, NULL, NULL);
-
-  // check file min initial and final time_t
-  // and set ini fin marks accordingly
-  getFileLimits(t);
-		  
-  if ( t->initime_t <= t->firstline_t )
-	{ t->inip = 0; p1f=1; t->initime_t = t->firstline_t; } 
-  else	
-	p1f = findPosition_t(t->f, t->initime_t, t->fsize, t->linelen, 1, &(t->inip));
-
-  if ( t->fintime_t >= t->lastline_t )
-	{ t->finp = t->fsize; p2f=1; t->fintime_t = t->lastline_t; }
-  else	
-	p2f = findPosition_t(t->f, t->fintime_t, t->fsize, t->linelen, 0, &(t->finp));
-
-  if (p1f && p2f)
-	{
-	t->step_t =  ((double)(t->fintime_t - t->initime_t)) / (t->final_samples - 1);
-
-	if (_verbose > 2)
-	  printf("\n delta t: %lf t1/p1: %li/%li  t1/p2: %li/%li p2-p1: %li", t->step_t, t->initime_t, t->inip, t->fintime_t, t->finp, t->finp-t->inip);
-
-	// space allocation for raw data array (we read file chunk in it)
-	if ( ( (t->raw_data_str)=malloc( 10 + t->finp - t->inip ) ) == NULL )
-	  {
-	  perror(" allocation error in 'l' [getBWDataFromFile]");
-	  exit(1);
-	  }
-
-	// read the file chunk (required interval)
-	fseek(t->f, t->inip , SEEK_SET);
-	toread = t->finp - t->inip;
-	totalread=0;
-	do 
-	  {
-	  nread = fread(&t->raw_data_str[totalread], 1, ((toread > 50000) ? 50000 : toread) , t->f);
-	  toread -= nread;
-	  totalread += nread;
-	  }while (toread>0 && nread!=0);
-
-	// if VERY verbose mode is set, then dump initial an final pieces of raw buffer, just for checking...	   
-	if (_verbose > 8)
-	  {
-	  int n=0;
-	  printf("\n Block start: |");
-	  do 
-		{
-		printf("%c", t->raw_data_str[n++]);
-        } while (n<300);
-	  printf("|\n");
-
-	  n=300;
-	  printf("\n Block end: |");
-	  do 
-		{
-		printf("%c", t->raw_data_str[totalread - (n--)]);
-        } while (n>=0);
-	  printf("|\n");
-      }   // do (highly verbose)
-      
-      
-    t->bufferlen=totalread;  
-    t->orig_samples = t->bufferlen / t->linelen;
-
-	// now it's high time for memory allocation, based on nsamples. nfields, etc
-	if ( ( t->orig_data = (double **) malloc(t->nfields * sizeof(double *)) ) == NULL )
-	  {
-	  perror(" allocation error in 't->dd' [getBWDataFromFile]");
-	  exit(1);
-	  }
-	for (n=0 ; n < t->nfields ; n++)
-	  if ( ( t->orig_data[n] = (double *) malloc(t->orig_samples * sizeof(double) * 2) ) == NULL )
-		{
-		perror(" allocation error in 't->dd[n]' [getBWDataFromFile]");
-		exit(1);
-		}
-
-	// the '2' in following allocation is awful!
-	// the right way would be to allocate a small number and then reallocate 
-	// as needed -> to much code! 
-	if ( ( t->orig_time = (time_t *) malloc(t->orig_samples * sizeof(time_t) * 2) ) == NULL )
-		{
-		perror(" allocation error in 't->t' [getBWDataFromFile]");
-		exit(1);
-		}
-
-	// now we allocate space for resutls (final samples)
-	if ( ( t->final_time = (time_t *) malloc(t->final_samples * sizeof(time_t) + 10) ) == NULL )
-		{
-		perror(" allocation error in 't->tfs' [getBWDataFromFile]");
-		exit(1);
-		}
-	
-	if ( ( t->final_data = (double **) malloc(t->nfields * sizeof(double *)) ) == NULL )
-	  {
-	  perror(" allocation error in 't->dfs' [getBWDataFromFile]");
-	  exit(1);
-	  }
-	for (n=0 ; n < t->nfields ; n++)
-	  if ( ( t->final_data[n] = (double *) malloc(t->final_samples * sizeof(double) + 10) ) == NULL )
-		{
-		perror(" allocation error in 't->dfs[n]' [getBWDataFromFile]");
-		exit(1);
-		}
-
-    // now fill internal arrays of double from raw buffer and then get final samples
-    // the the (anoying) 'client'
-//    if (fillArrays(t))  
-//        if (processArrays(t))
-//            printData(t);
-
-	} // pf1 and pf2 found
-  fclose(t->f);
-  }  // fopen
-  
-return(1);
-
-}
-
-                                                                                 
 //----------------------------------------------------------------------
 
 int processFile(trenddata *t)
@@ -268,32 +117,11 @@ if ( ((t->f)=fopen(t->fname, "r")) != NULL )
 			
 			
 			
-/*	// if VERY verbose mode is set, then dump initial an final pieces of raw buffer, just for checking...	   
-	if (_verbose > 8)
-	  {
-	  int n=0;
-	  printf("\n Block start: |");
-	  do 
-		{
-		printf("%c", t->raw_data_str[n++]);
-        } while (n<300);
-	  printf("|\n");
-
-	  n=300;
-	  printf("\n Block end: |");
-	  do 
-		{
-		printf("%c", t->raw_data_str[totalread - (n--)]);
-        } while (n>=0);
-	  printf("|\n");
-      }   // do (highly verbose)			
-	*/
 
 
 
 
 		{
-		char 				str[1000];
 		char 				*textLine=NULL;
 		char 				*endLine=NULL;
 				
@@ -336,6 +164,10 @@ if ( ((t->f)=fopen(t->fname, "r")) != NULL )
 
 				count++;
 				textElement = strtok_r(NULL, ",", &endElement);
+
+
+
+
 				
 				}
 
